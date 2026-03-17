@@ -1,0 +1,4 @@
+{
+  "buildCommand": "./mvnw clean package -DskipTests -q",
+  "startCommand": "java -jar target/taskcraft-backend-1.0.0.jar"
+}
