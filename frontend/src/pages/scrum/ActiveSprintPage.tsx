@@ -124,26 +124,28 @@ export function ActiveSprintPage() {
         </div>
       </div>
 
-      {activeSprint ? (
+      {activeSprint || loading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <HealthCard title="Story points" value={`${health.donePoints}/${health.totalPoints}`} sub={`${health.completion}% complete`} />
-          <HealthCard title="Remaining" value={`${health.remainingPoints}`} sub="points left" />
+          <HealthCard title="Story points" value={`${health.donePoints}/${health.totalPoints}`} sub={`${health.completion}% complete`} loading={loading} />
+          <HealthCard title="Remaining" value={`${health.remainingPoints}`} sub="points left" loading={loading} />
           <HealthCard
             title="Due soon (24h)"
             value={`${health.dueSoonCount}`}
             sub={health.dueSoonCount ? "keep momentum" : "all clear"}
             tone={health.dueSoonCount ? "warn" : "ok"}
+            loading={loading}
           />
           <HealthCard
             title="Overdue"
             value={`${health.overdueCount}`}
             sub={health.overdueCount ? "needs attention" : "no overdue tasks"}
             tone={health.overdueCount ? "danger" : "ok"}
+            loading={loading}
           />
         </div>
       ) : null}
 
-      {!activeSprint ? (
+      {!activeSprint && !loading ? (
         <div className="glass rounded-2xl p-4">
           <div className="text-sm text-white/70">
             No ACTIVE sprint found. Go to <span className="font-semibold text-white">Sprints</span> and set one sprint status to{" "}
@@ -180,16 +182,20 @@ export function ActiveSprintPage() {
   );
 }
 
+import { Skeleton } from "../../components/ui/Skeleton";
+
 function HealthCard({
   title,
   value,
   sub,
   tone,
+  loading,
 }: {
   title: string;
   value: string;
   sub: string;
   tone?: "ok" | "warn" | "danger";
+  loading?: boolean;
 }) {
   const icon =
     tone === "danger" ? (
@@ -206,7 +212,9 @@ function HealthCard({
         <div className="text-xs font-medium text-white/60">{title}</div>
         {icon}
       </div>
-      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
+      <div className="mt-2 text-2xl font-semibold text-white">
+        {loading ? <Skeleton className="h-8 w-12" /> : value}
+      </div>
       <div className="mt-1 text-xs text-white/50">{sub}</div>
     </div>
   );

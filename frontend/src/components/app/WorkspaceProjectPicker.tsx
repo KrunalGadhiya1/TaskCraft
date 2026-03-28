@@ -37,7 +37,13 @@ export function WorkspaceProjectPicker({ forceOpen }: { forceOpen?: boolean }) {
     setLoading(true);
     setLoadError(null);
     getMyWorkspaces()
-      .then((ws) => setWorkspaces(ws))
+      .then((ws) => {
+        setWorkspaces(ws);
+        if (selection.workspace && !ws.find((w) => w.id === selection.workspace?.id)) {
+          setWorkspace(null);
+          setProject(null);
+        }
+      })
       .catch((e) => setLoadError(getApiErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [effectiveOpen]);

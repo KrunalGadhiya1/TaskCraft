@@ -1,5 +1,6 @@
-import * as React from "react";
+
 import { cn } from "../../lib/cn";
+import { motion, type HTMLMotionProps } from "framer-motion";
 
 type Variant = "primary" | "ghost";
 type Size = "sm" | "md";
@@ -9,9 +10,12 @@ export function Button({
   variant = "primary",
   size = "md",
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
+}: HTMLMotionProps<"button"> & { variant?: Variant; size?: Size }) {
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.02, y: -1 }}
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition",
         "focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:ring-offset-0 disabled:opacity-50 disabled:pointer-events-none",

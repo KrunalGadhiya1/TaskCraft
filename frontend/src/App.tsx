@@ -18,6 +18,8 @@ import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { ErrorBoundary } from "./components/app/ErrorBoundary";
 import { BacklogPage } from "./pages/scrum/BacklogPage";
 import { ActiveSprintPage } from "./pages/scrum/ActiveSprintPage";
+import { NotFoundPage } from "./pages/error/NotFoundPage";
+import { SplashScreen } from "./components/ui/SplashScreen";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -52,7 +54,7 @@ function AppRoutes() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
@@ -64,7 +66,9 @@ export default function App() {
         <div className="galaxy-noise" />
         <Toaster richColors position="top-right" />
         <ErrorBoundary>
-          <AppRoutes />
+          <SplashScreen>
+            <AppRoutes />
+          </SplashScreen>
         </ErrorBoundary>
       </AppProvider>
     </AuthProvider>

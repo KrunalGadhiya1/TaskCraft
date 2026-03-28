@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import confetti from "canvas-confetti";
 import { DndContext, PointerSensor, closestCenter, useDroppable, useDraggable, useSensor, useSensors } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { motion } from "framer-motion";
@@ -19,9 +20,9 @@ import { getApiErrorMessage } from "../../lib/api";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
+import { SideDrawer } from "../../components/ui/SideDrawer";
 import { cn } from "../../lib/cn";
 import {
-  addAttachment,
   addComment,
   getAttachments,
   getComments,
@@ -81,6 +82,15 @@ export function KanbanPage() {
     const prevTasks = tasks;
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: toStatus as TaskStatus } : t)));
     try {
+      if (toStatus === "DONE") {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#6366f1', '#a855f7', '#ec4899', '#3b82f6', '#ffffff'],
+          zIndex: 9999
+        });
+      }
       await updateTaskStatus(selection.workspace.id, selection.project.id, taskId, toStatus as TaskStatus);
       toast.success(`Moved to ${toStatus.replaceAll("_", " ")}`);
     } catch (err) {
@@ -164,6 +174,13 @@ function KanbanCard({ task, onOpen }: { task: TaskResponse; onOpen: () => void }
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : undefined;
 
+  const priorityColor = {
+    CRITICAL: "bg-red-500/10 text-red-400 border-red-500/20",
+    HIGH: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    MEDIUM: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    LOW: "bg-white/5 text-white/40 border-white/10",
+  }[task.priority] || "bg-white/5 text-white/40 border-white/10";
+
   return (
     <div
       ref={setNodeRef}
@@ -171,22 +188,35 @@ function KanbanCard({ task, onOpen }: { task: TaskResponse; onOpen: () => void }
       {...listeners}
       {...attributes}
       className={cn(
-        "rounded-2xl border border-white/10 bg-white/5 p-3 text-left",
-        "hover:bg-white/[0.08] transition",
-        isDragging && "opacity-70",
+        "rounded-xl border border-white/5 bg-[#1C1E24] p-3 text-left shadow-sm",
+        "hover:border-white/10 hover:bg-[#23252C] transition-colors cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-60 ring-2 ring-indigo-500 scale-105 shadow-xl",
       )}
       onDoubleClick={onOpen}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="text-sm font-medium text-white">{task.title}</div>
+      <div className="flex items-start justify-between gap-2 mb-2">
         {task.issueKey ? (
-          <div className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/80">
+          <div className="shrink-0 text-[10px] font-semibold tracking-wider text-white/40 group-hover:text-white/60 transition-colors">
             {task.issueKey}
           </div>
-        ) : null}
+        ) : <div />}
+        <div className={cn("shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border", priorityColor)}>
+          {task.priority}
+        </div>
       </div>
-      <div className="mt-1 text-xs text-white/60">
-        {task.type} · Priority: {task.priority}
+      <div className="text-sm font-medium text-white/90 leading-snug">{task.title}</div>
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/20 text-[9px] font-bold text-indigo-300 ring-1 ring-indigo-500/30">
+            {task.type.charAt(0)}
+          </div>
+          {task.storyPoints != null && (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/5 text-[10px] font-medium text-white/50">
+              {task.storyPoints}
+            </div>
+          )}
+        </div>
+        <div className="h-5 w-5 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 ring-1 ring-white/10 shadow-inner" />
       </div>
     </div>
   );
@@ -301,8 +331,6 @@ function TaskDetailsModal({
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [commentText, setCommentText] = useState("");
   const [attachments, setAttachments] = useState<AttachmentResponse[]>([]);
-  const [attName, setAttName] = useState("");
-  const [attUrl, setAttUrl] = useState("");
 
   useEffect(() => {
     if (!task) return;
@@ -326,12 +354,11 @@ function TaskDetailsModal({
         .catch((e) => toast.error(getApiErrorMessage(e)));
     }
   }, [tab, task, selection.workspace, selection.project]);
-
-  return (
-    <Modal open={Boolean(task)} onClose={onClose} title={task ? `Task #${task.id}` : "Task"}>
+  return (
+    <SideDrawer open={Boolean(task)} onClose={onClose} title={task ? `Task ${task.issueKey || `#${task.id}`}` : "Task Details"}>
       {!task ? null : (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 border-b border-white/5 pb-2">
             <TabButton active={tab === "details"} onClick={() => setTab("details")}>
               Details
             </TabButton>
@@ -344,53 +371,63 @@ function TaskDetailsModal({
           </div>
 
           {tab === "details" ? (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-white/70">Title</div>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-white/50 uppercase tracking-widest">Title</div>
+                <input
+                  className="w-full bg-transparent text-xl font-semibold text-white outline-none placeholder:text-white/20"
+                  value={title}
+                  placeholder="Task title"
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-white/70">Description</div>
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-white/50 uppercase tracking-widest">Description</div>
                 <textarea
-                  className="min-h-[110px] w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none focus:ring-2 focus:ring-violet-400/30"
+                  className="min-h-[150px] w-full resize-none rounded-xl border border-white/5 bg-[#1A1C20] p-3 text-sm text-white/80 outline-none transition-colors focus:border-indigo-500/50 focus:bg-[#1C1E24]"
                   value={description}
+                  placeholder="Add a more detailed description..."
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-white/70">Type</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-white/50 uppercase tracking-widest">Type</div>
                   <select
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white"
+                    className="h-10 w-full rounded-lg border border-white/5 bg-[#1A1C20] px-3 justify-between text-sm text-white outline-none"
                     value={type}
                     onChange={(e) => setType(e.target.value as TaskType)}
                   >
-                    <option value="TASK">TASK</option>
-                    <option value="BUG">BUG</option>
-                    <option value="STORY">STORY</option>
-                    <option value="SUBTASK">SUBTASK</option>
+                    <option value="TASK">Task</option>
+                    <option value="BUG">Bug</option>
+                    <option value="STORY">Story</option>
+                    <option value="SUBTASK">Subtask</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-white/70">Priority</div>
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-white/50 uppercase tracking-widest">Priority</div>
                   <select
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white"
+                    className="h-10 w-full rounded-lg border border-white/5 bg-[#1A1C20] px-3 text-sm text-white outline-none"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as TaskPriority)}
                   >
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="CRITICAL">CRITICAL</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                    <option value="CRITICAL">Critical</option>
                   </select>
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-1">
-                <Button variant="ghost" onClick={onClose}>
-                  Close
-                </Button>
-                <Button
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-4">
+                <button
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white transition-colors"
+                  onClick={onClose}
+                >
+                  Cancel
+                </button>
+                <button
                   disabled={saving}
+                  className="rounded-lg bg-indigo-500 px-6 py-2 text-sm font-medium text-white hover:bg-indigo-600 transition-colors disabled:opacity-50"
                   onClick={async () => {
                     if (!selection.workspace || !selection.project) return;
                     setSaving(true);
@@ -403,7 +440,7 @@ function TaskDetailsModal({
                         storyPoints: undefined,
                         dueDate: undefined,
                       });
-                      toast.success("Task updated");
+                      toast.success("Task saved");
                       onUpdated(updated);
                       onClose();
                     } catch (e) {
@@ -413,45 +450,29 @@ function TaskDetailsModal({
                     }
                   }}
                 >
-                  {saving ? "Saving..." : "Save"}
-                </Button>
+                  {saving ? "Saving..." : "Save changes"}
+                </button>
               </div>
             </div>
           ) : null}
 
           {tab === "comments" ? (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                {comments.length === 0 ? (
-                  <div className="text-sm text-white/60">No comments.</div>
-                ) : (
-                  comments.map((c) => (
-                    <div key={c.id} className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="text-sm font-semibold text-white">{c.authorUsername}</div>
-                        <div className="text-xs text-white/50">{new Date(c.createdAt).toLocaleString()}</div>
-                      </div>
-                      <div className="mt-1 text-sm text-white/70">{c.content}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="space-y-2">
+            <div className="space-y-5">
+              <div className="space-y-3">
                 <textarea
-                  className="min-h-[90px] w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none focus:ring-2 focus:ring-violet-400/30"
+                  className="min-h-[100px] w-full resize-none rounded-xl border border-white/5 bg-[#1A1C20] p-3 text-sm text-white/80 outline-none transition-colors focus:border-indigo-500/50"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Write a comment..."
+                  placeholder="Drop a comment..."
                 />
                 <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
+                  <button
+                    className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 transition-colors"
                     onClick={async () => {
                       if (!selection.workspace || !selection.project) return;
                       try {
                         const created = await addComment(selection.workspace.id, selection.project.id, task.id, commentText);
-                        setComments((prev) => [...prev, created]);
+                        setComments((prev) => [created, ...prev]);
                         setCommentText("");
                         toast.success("Comment added");
                       } catch (e) {
@@ -459,94 +480,82 @@ function TaskDetailsModal({
                       }
                     }}
                   >
-                    Add comment
-                  </Button>
+                    Post comment
+                  </button>
                 </div>
               </div>
-            </div>
-          ) : null}
 
-          {tab === "attachments" ? (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                {attachments.length === 0 ? (
-                  <div className="text-sm text-white/60">No attachments.</div>
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                {comments.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-white/40">No activity yet.</div>
                 ) : (
-                  attachments.map((a) => (
-                    <a
-                      key={a.id}
-                      href={a.url.startsWith("http") ? a.url : `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ?? "http://localhost:8080"}${a.url}`}
-                      target="_blank"
-                      className="block rounded-2xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/10"
-                      rel="noreferrer"
-                    >
-                      <div className="text-sm font-semibold text-white">{a.fileName}</div>
-                      <div className="mt-1 text-xs text-white/60">{a.url}</div>
-                    </a>
+                  comments.map((c) => (
+                    <div key={c.id} className="flex gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-bold text-indigo-300">
+                        {c.authorUsername.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-white/90">{c.authorUsername}</span>
+                          <span className="text-[10px] text-white/40">{new Date(c.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div className="text-sm text-white/70 bg-[#1A1C20] p-3 rounded-tr-xl rounded-b-xl border border-white/5 inline-block">
+                          {c.content}
+                        </div>
+                      </div>
+                    </div>
                   ))
                 )}
               </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                <div className="text-sm font-semibold text-white">Add attachment (metadata)</div>
-                <div className="mt-2 space-y-2">
-                  <Input value={attName} onChange={(e) => setAttName(e.target.value)} placeholder="File name" />
-                  <Input value={attUrl} onChange={(e) => setAttUrl(e.target.value)} placeholder="URL (e.g. Drive link)" />
-                  <div className="flex justify-end">
-                    <Button
-                      variant="ghost"
-                      onClick={async () => {
-                        if (!selection.workspace || !selection.project) return;
-                        try {
-                          const created = await addAttachment(selection.workspace.id, selection.project.id, task.id, {
-                            fileName: attName,
-                            url: attUrl,
-                          });
-                          setAttachments((prev) => [created, ...prev]);
-                          setAttName("");
-                          setAttUrl("");
-                          toast.success("Attachment added");
-                        } catch (e) {
-                          toast.error(getApiErrorMessage(e));
-                        }
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                <div className="text-sm font-semibold text-white">Upload file</div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <input
-                    type="file"
-                    className="text-sm text-white/70"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (!selection.workspace || !selection.project) return;
-                      try {
-                        const created = await uploadAttachment(selection.workspace.id, selection.project.id, task.id, file);
-                        setAttachments((prev) => [created, ...prev]);
-                        toast.success("File uploaded");
-                        e.currentTarget.value = "";
-                      } catch (err) {
-                        toast.error(getApiErrorMessage(err));
-                      }
-                    }}
-                  />
-                </div>
-                <div className="mt-2 text-xs text-white/50">
-                  Files are stored in backend `uploads/` and exposed at `/uploads/...`
-                </div>
-              </div>
             </div>
           ) : null}
+
+          {/* Attachments UI (leaving existing logic mostly, just styling) */}
+          {tab === "attachments" ? (
+             <div className="space-y-3">
+               <div className="space-y-2">
+                 {attachments.length === 0 ? (
+                   <div className="text-sm text-white/60">No attachments.</div>
+                 ) : (
+                   attachments.map((a) => (
+                     <a
+                       key={a.id}
+                       href={a.url.startsWith("http") ? a.url : `${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ?? "http://localhost:8080"}${a.url}`}
+                       target="_blank"
+                       className="block rounded-xl border border-white/5 bg-[#1A1C20] p-3 text-left hover:border-white/20 transition-colors"
+                       rel="noreferrer"
+                     >
+                       <div className="text-sm font-semibold text-white/90">{a.fileName}</div>
+                       <div className="mt-1 text-xs text-white/40 truncate">{a.url}</div>
+                     </a>
+                   ))
+                 )}
+               </div>
+               
+               <div className="pt-4 border-t border-white/5 space-y-3">
+                 <input type="file" className="text-sm text-white/60 file:mr-4 file:rounded-full file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-white/20 cursor-pointer" 
+                   onChange={async (e) => {
+                       const target = e.target;
+                       const file = target.files?.[0];
+                       if (!file) return;
+                       if (!selection.workspace || !selection.project) return;
+                       try {
+                         const created = await uploadAttachment(selection.workspace.id, selection.project.id, task.id, file);
+                         setAttachments((prev) => [created, ...prev]);
+                         toast.success("File uploaded");
+                         target.value = "";
+                       } catch (err) {
+                         toast.error(getApiErrorMessage(err));
+                       }
+                     }}
+                 />
+               </div>
+             </div>
+          ) : null}
+
         </div>
       )}
-    </Modal>
+    </SideDrawer>
   );
 }
 
@@ -555,10 +564,17 @@ function TabButton({ active, children, onClick }: { active: boolean; children: R
     <button
       onClick={onClick}
       className={[
-        "rounded-xl border px-3 py-2 text-xs font-medium transition",
-        active ? "border-violet-300/30 bg-violet-400/10 text-white" : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
+        "relative rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors",
+        active ? "text-white" : "text-white/40 hover:text-white/80",
       ].join(" ")}
     >
+      {active && (
+        <motion.div
+          layoutId="tab"
+          className="absolute inset-0 z-[-1] rounded bg-white/10"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
       {children}
     </button>
   );

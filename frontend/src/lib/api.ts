@@ -29,6 +29,7 @@ api.interceptors.response.use(
       if (!alreadyHandling) {
         sessionStorage.setItem("taskcraft_auth_redirect", "1");
         clearStoredToken();
+        localStorage.removeItem("taskcraft_selection_v1");
         toast.error("Session expired or unauthorized. Please login again.");
         // give the toast a moment to render before redirect
         setTimeout(() => {

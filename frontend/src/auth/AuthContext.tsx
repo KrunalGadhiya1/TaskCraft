@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
           clearStoredToken();
           setToken(null);
+          localStorage.removeItem("taskcraft_selection_v1");
         }
       },
     }),

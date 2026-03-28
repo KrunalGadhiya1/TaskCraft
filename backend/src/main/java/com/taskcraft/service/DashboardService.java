@@ -14,9 +14,15 @@ import com.taskcraft.repository.WorkspaceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 @Service
 public class DashboardService {
@@ -76,6 +82,42 @@ public class DashboardService {
         dto.setTasksByPriority(byPriority);
         dto.setTotalTasks(total);
         dto.setDoneTasks(done);
+
+        // Chart logic
+        List<Task> allTasks = taskRepository.findByProject(project);
+        Map<String, Integer> createdMap = new TreeMap<>();
+        Map<String, Integer> completedMap = new TreeMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault());
+
+        for (Task t : allTasks) {
+            if (t.getCreatedAt() != null) {
+                String cDate = formatter.format(t.getCreatedAt());
+                createdMap.put(cDate, createdMap.getOrDefault(cDate, 0) + 1);
+            }
+            if (t.getStatus() == Task.TaskStatus.DONE && t.getUpdatedAt() != null) {
+                String uDate = formatter.format(t.getUpdatedAt());
+                completedMap.put(uDate, completedMap.getOrDefault(uDate, 0) + 1);
+            }
+        }
+
+        Set<String> allDates = new TreeSet<>();
+        allDates.addAll(createdMap.keySet());
+        allDates.addAll(completedMap.keySet());
+
+        List<DashboardDtos.DailyProgress> progressChart = new ArrayList<>();
+        int cumCreated = 0;
+        int cumCompleted = 0;
+        for (String d : allDates) {
+            cumCreated += createdMap.getOrDefault(d, 0);
+            cumCompleted += completedMap.getOrDefault(d, 0);
+            DashboardDtos.DailyProgress dp = new DashboardDtos.DailyProgress();
+            dp.setDate(d);
+            dp.setTotal(cumCreated);
+            dp.setDone(cumCompleted);
+            progressChart.add(dp);
+        }
+        dto.setProgressChart(progressChart);
+
         return dto;
     }
 

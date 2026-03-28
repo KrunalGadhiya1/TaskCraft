@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button";
 import { getApiErrorMessage } from "../../lib/api";
@@ -48,18 +49,34 @@ export function AdminUsersPage() {
             {loading ? "Loading..." : "No users or you are not ADMIN (403)."}
           </div>
         ) : (
-          <div className="space-y-2">
+          <motion.div
+            className="space-y-2"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+            }}
+          >
             {users.map((u) => (
-              <div key={u.id} className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <motion.div
+                key={u.id}
+                variants={{
+                  hidden: { opacity: 0, scale: 0.95 },
+                  visible: { opacity: 1, scale: 1 },
+                }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="rounded-2xl border border-white/10 bg-white/5 p-3 hover:bg-white/10 transition-colors group"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-left">
-                    <div className="text-sm font-semibold text-white">{u.username}</div>
+                    <div className="text-sm font-semibold text-white group-hover:text-violet-200 transition-colors">{u.username}</div>
                     <div className="text-xs text-white/60">{u.email}</div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <select
-                      className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm"
+                      className="h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors px-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                       value={u.role}
                       onChange={async (e) => {
                         try {
@@ -71,15 +88,15 @@ export function AdminUsersPage() {
                         }
                       }}
                     >
-                      <option value="ROLE_ADMIN">ROLE_ADMIN</option>
-                      <option value="ROLE_MANAGER">ROLE_MANAGER</option>
-                      <option value="ROLE_MEMBER">ROLE_MEMBER</option>
-                      <option value="ROLE_VIEWER">ROLE_VIEWER</option>
-                      <option value="ROLE_USER">ROLE_USER</option>
+                      <option value="ROLE_ADMIN" className="bg-black text-white">ROLE_ADMIN</option>
+                      <option value="ROLE_MANAGER" className="bg-black text-white">ROLE_MANAGER</option>
+                      <option value="ROLE_MEMBER" className="bg-black text-white">ROLE_MEMBER</option>
+                      <option value="ROLE_VIEWER" className="bg-black text-white">ROLE_VIEWER</option>
+                      <option value="ROLE_USER" className="bg-black text-white">ROLE_USER</option>
                     </select>
 
                     <select
-                      className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm"
+                      className="h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors px-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                       value={u.enabled ? "ENABLED" : "DISABLED"}
                       onChange={async (e) => {
                         const enabled = e.target.value === "ENABLED";
@@ -92,8 +109,8 @@ export function AdminUsersPage() {
                         }
                       }}
                     >
-                      <option value="ENABLED">ENABLED</option>
-                      <option value="DISABLED">DISABLED</option>
+                      <option value="ENABLED" className="bg-black text-white">ENABLED</option>
+                      <option value="DISABLED" className="bg-black text-white">DISABLED</option>
                     </select>
 
                     <Button
@@ -108,14 +125,15 @@ export function AdminUsersPage() {
                           toast.error(getApiErrorMessage(err));
                         }
                       }}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                     >
                       Delete
                     </Button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

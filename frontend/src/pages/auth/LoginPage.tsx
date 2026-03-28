@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -9,7 +9,6 @@ import { getApiErrorMessage } from "../../lib/api";
 
 export function LoginPage() {
   const { login } = useAuth();
-  const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,8 +34,9 @@ export function LoginPage() {
               setLoading(true);
               try {
                 await login(identifier, password);
+                localStorage.removeItem("taskcraft_selection_v1");
                 toast.success("Logged in");
-                navigate("/app/kanban");
+                window.location.href = "/app/dashboard";
               } catch (err) {
                 toast.error(getApiErrorMessage(err));
               } finally {

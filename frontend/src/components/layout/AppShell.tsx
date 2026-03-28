@@ -1,6 +1,6 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Button } from "../ui/Button";
+import { useState, useEffect } from "react";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../auth/AuthContext";
 import {
   Bell,
@@ -10,108 +10,269 @@ import {
   LayoutGrid,
   LogOut,
   Search,
-  Sparkles,
   Timer,
   FileDown,
   Users,
   FolderKanban,
   Rocket,
   Settings,
+  ChevronLeft,
+  ChevronRight,
+  Command,
+  CircleUserRound,
 } from "lucide-react";
 import { WorkspaceProjectPicker } from "../app/WorkspaceProjectPicker";
 
 export function AppShell() {
   const { logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
-    <div className="min-h-full">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/10 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="glass grid h-10 w-10 place-items-center rounded-2xl">
-              <Sparkles className="h-5 w-5 text-violet-200" />
+    <div className="flex h-screen w-full overflow-hidden bg-[#0A0A0C] text-[#EDEDED] antialiased selection:bg-indigo-500/30">
+      {/* Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isSidebarCollapsed ? 80 : 260 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="relative z-20 flex h-full flex-col border-r border-white/5 bg-[#101114]"
+      >
+        <div className="flex h-14 items-center justify-between px-4">
+          <AnimatePresence mode="popLayout">
+            {!isSidebarCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex items-center gap-3 font-semibold text-white/90"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-white shadow-inner">
+                  <Command className="h-4 w-4" />
+                </div>
+                TaskCraft
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {isSidebarCollapsed && (
+            <div className="mx-auto flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-white">
+              <Command className="h-4 w-4" />
             </div>
-            <div className="text-left">
-              <div className="text-sm font-semibold text-white">TaskCraft</div>
-              <div className="text-xs text-white/50">Galaxy Command Center</div>
-            </div>
+          )}
+        </div>
+
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute -right-3 top-16 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1A1C20] text-white/50 shadow-sm hover:text-white"
+        >
+          {isSidebarCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+        </button>
+
+        <div className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+          <div className="space-y-1">
+            <NavItem collapsed={isSidebarCollapsed} to="/app/dashboard" icon={<LayoutDashboard />} label="Dashboard" />
+            <NavItem collapsed={isSidebarCollapsed} to="/app/active-sprint" icon={<Flag />} label="Active Sprint" />
+            <NavItem collapsed={isSidebarCollapsed} to="/app/kanban" icon={<LayoutGrid />} label="Kanban" />
+            <NavItem collapsed={isSidebarCollapsed} to="/app/sprints" icon={<Rocket />} label="Sprints" />
+            <NavItem collapsed={isSidebarCollapsed} to="/app/backlog" icon={<ListTodo />} label="Backlog" />
           </div>
-          <div className="flex items-center gap-2">
-            <WorkspaceProjectPicker />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                await logout();
-                navigate("/login");
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+          
+          <div className="mt-6 mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            {!isSidebarCollapsed && "Planning"}
+          </div>
+          <div className="space-y-1">
+            <NavItem collapsed={isSidebarCollapsed} to="/app/manage" icon={<FolderKanban />} label="Manage" />
+            <NavItem collapsed={isSidebarCollapsed} to="/app/timeline" icon={<Timer />} label="Timeline" />
+            <NavItem collapsed={isSidebarCollapsed} to="/app/reports" icon={<FileDown />} label="Reports" />
           </div>
         </div>
-      </header>
 
-      <div className="mx-auto grid max-w-6xl grid-cols-12 gap-4 px-4 py-6">
-        <aside className="col-span-12 md:col-span-3">
-          <nav className="glass rounded-2xl p-3">
-            <NavItem to="/app/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" />
-            <NavItem to="/app/backlog" icon={<ListTodo className="h-4 w-4" />} label="Backlog" />
-            <NavItem to="/app/active-sprint" icon={<Flag className="h-4 w-4" />} label="Active Sprint" />
-            <NavLink
-              to="/app/kanban"
-              className={({ isActive }) =>
-                [
-                  "flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition",
-                  isActive ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5",
-                ].join(" ")
-              }
+        <div className="border-t border-white/5 p-3">
+          <NavItem collapsed={isSidebarCollapsed} to="/app/admin/users" icon={<Users />} label="Team Directory" />
+          <NavItem collapsed={isSidebarCollapsed} to="/app/profile" icon={<Settings />} label="Settings" />
+        </div>
+      </motion.aside>
+
+      {/* Main App Area */}
+      <div className="flex flex-1 flex-col overflow-hidden relative">
+        {/* Top Navbar */}
+        <header className="z-10 flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-[#0A0A0C]/80 px-6 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <WorkspaceProjectPicker />
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setCmdOpen(true)}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
             >
-              <LayoutGrid className="h-4 w-4" />
-              Kanban
-            </NavLink>
-            <NavItem to="/app/sprints" icon={<Rocket className="h-4 w-4" />} label="Sprints" />
-            <NavItem to="/app/manage" icon={<FolderKanban className="h-4 w-4" />} label="Manage" />
-            <NavItem to="/app/timeline" icon={<Timer className="h-4 w-4" />} label="Timeline" />
-            <NavItem to="/app/notifications" icon={<Bell className="h-4 w-4" />} label="Notifications" />
-            <NavItem to="/app/search" icon={<Search className="h-4 w-4" />} label="Search" />
-            <NavItem to="/app/reports" icon={<FileDown className="h-4 w-4" />} label="Reports" />
-            <div className="my-2 h-px bg-white/10" />
-            <NavItem to="/app/profile" icon={<Settings className="h-4 w-4" />} label="Profile" />
-            <NavItem to="/app/admin/users" icon={<Users className="h-4 w-4" />} label="Admin Users" />
-          </nav>
-        </aside>
+              <Search className="h-4 w-4" />
+              <span className="hidden sm:inline">Search...</span>
+              <span className="hidden rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono sm:inline">⌘K</span>
+            </button>
+            <div className="h-4 w-px bg-white/10" />
+            <button 
+              onClick={() => navigate("/app/notifications")}
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg text-white/50 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              <Bell className="h-4 w-4" />
+              <div className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-indigo-500 ring-2 ring-[#0A0A0C]" />
+            </button>
+            <div className="group relative">
+              <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 transition-colors">
+                <CircleUserRound className="h-5 w-5" />
+              </button>
+              {/* Invisible bridge to maintain hover state */}
+              <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block">
+                <div className="rounded-xl border border-white/10 bg-[#16181D] p-1 shadow-2xl">
+                  <button
+                    onClick={() => navigate("/app/profile")}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Profile Settings
+                  </button>
+                  <div className="my-1 h-px bg-white/5" />
+                  <button
+                    onClick={async () => {
+                      await logout();
+                      window.location.href = "/login";
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
 
-        <main className="col-span-12 md:col-span-9">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <Outlet />
-          </motion.div>
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+          <div className="mx-auto max-w-7xl">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="h-full"
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </main>
       </div>
+
+      {/* Command Palette Mockup */}
+      <AnimatePresence>
+        {cmdOpen && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-32">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setCmdOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-[#16181D] shadow-2xl"
+            >
+              <div className="flex items-center border-b border-white/10 px-4">
+                <Search className="h-5 w-5 text-white/40" />
+                <input 
+                  autoFocus 
+                  placeholder="Type a command or search..." 
+                  className="w-full bg-transparent px-4 py-4 text-sm text-white outline-none placeholder:text-white/40"
+                />
+                <button onClick={() => setCmdOpen(false)} className="rounded bg-white/5 px-2 py-1 text-[10px] text-white/50 hover:bg-white/10 hover:text-white">ESC</button>
+              </div>
+              <div className="max-h-[300px] overflow-y-auto p-2">
+                <div className="px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Suggestions</div>
+                <CmdItem icon={<LayoutGrid />} label="Go to Kanban Board" onAction={() => { setCmdOpen(false); navigate("/app/kanban"); }} />
+                <CmdItem icon={<Flag />} label="View Active Sprint" onAction={() => { setCmdOpen(false); navigate("/app/active-sprint"); }} />
+                <CmdItem icon={<Rocket />} label="Plan new sprint" onAction={() => { setCmdOpen(false); navigate("/app/sprints"); }} />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+function CmdItem({ icon, label, onAction }: { icon: React.ReactNode; label: string; onAction: () => void }) {
   return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        [
-          "flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition",
-          isActive ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5",
-        ].join(" ")
-      }
+    <button 
+      onClick={onAction}
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
     >
-      {icon}
+      <div className="[&>svg]:h-4 [&>svg]:w-4 [&>svg]:text-white/40">{icon}</div>
       {label}
-    </NavLink>
+    </button>
   );
 }
 
+function NavItem({ to, icon, label, collapsed }: { to: string; icon: React.ReactNode; label: string; collapsed: boolean }) {
+  return (
+    <NavLink
+      to={to}
+      title={collapsed ? label : undefined}
+      className={({ isActive }) =>
+        [
+          "group relative flex items-center rounded-xl transition-all duration-200",
+          collapsed ? "h-10 w-10 justify-center mx-auto" : "px-3 py-2 w-full gap-3",
+          isActive ? "text-white font-medium" : "text-white/60 hover:text-white",
+        ].join(" ")
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <motion.div
+              layoutId="sidebar-active-pill"
+              className="absolute inset-0 z-0 rounded-xl bg-white/10"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
+          <div className="relative z-10 flex items-center justify-center [&>svg]:h-4 [&>svg]:w-4">
+            {icon}
+          </div>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span 
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className="relative z-10 whitespace-nowrap text-sm overflow-hidden"
+              >
+                {label}
+              </motion.span>
+            )}
+          </AnimatePresence>
+          <div className="absolute inset-0 z-0 rounded-xl bg-white/0 transition-colors duration-200 group-hover:bg-white/5" />
+        </>
+      )}
+    </NavLink>
+  );
+}

@@ -20,10 +20,10 @@ export function Modal({
       {open ? (
         <>
           <motion.div
-            className="fixed inset-0 z-50 bg-black/60"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { delay: 0.1 } }}
             onClick={onClose}
           />
           <motion.div
@@ -33,10 +33,10 @@ export function Modal({
               "glass rounded-3xl p-5",
               className,
             )}
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            transition={{ duration: 0.18 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 350 }}
             role="dialog"
             aria-modal="true"
           >
