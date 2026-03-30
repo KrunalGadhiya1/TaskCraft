@@ -115,7 +115,7 @@ export function KanbanPage() {
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar md:grid md:grid-cols-5 md:overflow-visible md:snap-none">
           {COLUMNS.map((col) => {
             const columnTasks = byStatus[col.id];
             return (
@@ -162,7 +162,7 @@ function KanbanColumn({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div ref={setNodeRef} className={cn("glass rounded-2xl p-3", isOver && "ring-2 ring-violet-300/25")}>
+    <div ref={setNodeRef} className={cn("glass rounded-2xl p-3 min-w-[85vw] shrink-0 snap-center md:min-w-0 flex flex-col h-full", isOver && "ring-2 ring-violet-300/25")}>
       {children}
     </div>
   );

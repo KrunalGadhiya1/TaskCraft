@@ -20,6 +20,8 @@ import {
   ChevronRight,
   Command,
   CircleUserRound,
+  Menu,
+  X,
 } from "lucide-react";
 import { WorkspaceProjectPicker } from "../app/WorkspaceProjectPicker";
 
@@ -28,6 +30,7 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
 
   useEffect(() => {
@@ -43,12 +46,12 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0A0A0C] text-[#EDEDED] antialiased selection:bg-indigo-500/30">
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <motion.aside
         initial={false}
         animate={{ width: isSidebarCollapsed ? 80 : 260 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="relative z-20 flex h-full flex-col border-r border-white/5 bg-[#101114]"
+        className="relative z-20 hidden h-full flex-col border-r border-white/5 bg-[#101114] md:flex"
       >
         <div className="flex h-14 items-center justify-between px-4">
           <AnimatePresence mode="popLayout">
@@ -80,36 +83,55 @@ export function AppShell() {
           {isSidebarCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
-        <div className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
-          <div className="space-y-1">
-            <NavItem collapsed={isSidebarCollapsed} to="/app/dashboard" icon={<LayoutDashboard />} label="Dashboard" />
-            <NavItem collapsed={isSidebarCollapsed} to="/app/active-sprint" icon={<Flag />} label="Active Sprint" />
-            <NavItem collapsed={isSidebarCollapsed} to="/app/kanban" icon={<LayoutGrid />} label="Kanban" />
-            <NavItem collapsed={isSidebarCollapsed} to="/app/sprints" icon={<Rocket />} label="Sprints" />
-            <NavItem collapsed={isSidebarCollapsed} to="/app/backlog" icon={<ListTodo />} label="Backlog" />
-          </div>
-          
-          <div className="mt-6 mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-            {!isSidebarCollapsed && "Planning"}
-          </div>
-          <div className="space-y-1">
-            <NavItem collapsed={isSidebarCollapsed} to="/app/manage" icon={<FolderKanban />} label="Manage" />
-            <NavItem collapsed={isSidebarCollapsed} to="/app/timeline" icon={<Timer />} label="Timeline" />
-            <NavItem collapsed={isSidebarCollapsed} to="/app/reports" icon={<FileDown />} label="Reports" />
-          </div>
-        </div>
-
-        <div className="border-t border-white/5 p-3">
-          <NavItem collapsed={isSidebarCollapsed} to="/app/admin/users" icon={<Users />} label="Team Directory" />
-          <NavItem collapsed={isSidebarCollapsed} to="/app/profile" icon={<Settings />} label="Settings" />
-        </div>
+        <SidebarContent collapsed={isSidebarCollapsed} onNavItemClick={() => {}} />
       </motion.aside>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/5 bg-[#101114] md:hidden"
+            >
+              <div className="flex h-14 items-center justify-between px-4 border-b border-white/5">
+                <div className="flex items-center gap-3 font-semibold text-white/90">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-white shadow-inner">
+                    <Command className="h-4 w-4" />
+                  </div>
+                  TaskCraft
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg p-1 text-white/50 hover:bg-white/5 hover:text-white">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <SidebarContent collapsed={false} onNavItemClick={() => setIsMobileMenuOpen(false)} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Main App Area */}
       <div className="flex flex-1 flex-col overflow-hidden relative">
         {/* Top Navbar */}
-        <header className="z-10 flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-[#0A0A0C]/80 px-6 backdrop-blur-md">
-          <div className="flex items-center gap-4">
+        <header className="z-10 flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-[#0A0A0C]/80 px-4 md:px-6 backdrop-blur-md">
+          <div className="flex items-center gap-3 md:gap-4">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="flex items-center justify-center rounded-lg p-2 text-white/60 hover:bg-white/5 hover:text-white md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
             <WorkspaceProjectPicker />
           </div>
           
@@ -221,6 +243,36 @@ export function AppShell() {
   );
 }
 
+function SidebarContent({ collapsed, onNavItemClick }: { collapsed: boolean; onNavItemClick: () => void }) {
+  return (
+    <>
+      <div className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+        <div className="space-y-1">
+          <NavItem collapsed={collapsed} to="/app/dashboard" icon={<LayoutDashboard />} label="Dashboard" onClick={onNavItemClick} />
+          <NavItem collapsed={collapsed} to="/app/active-sprint" icon={<Flag />} label="Active Sprint" onClick={onNavItemClick} />
+          <NavItem collapsed={collapsed} to="/app/kanban" icon={<LayoutGrid />} label="Kanban" onClick={onNavItemClick} />
+          <NavItem collapsed={collapsed} to="/app/sprints" icon={<Rocket />} label="Sprints" onClick={onNavItemClick} />
+          <NavItem collapsed={collapsed} to="/app/backlog" icon={<ListTodo />} label="Backlog" onClick={onNavItemClick} />
+        </div>
+        
+        <div className="mt-6 mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+          {!collapsed && "Planning"}
+        </div>
+        <div className="space-y-1">
+          <NavItem collapsed={collapsed} to="/app/manage" icon={<FolderKanban />} label="Manage" onClick={onNavItemClick} />
+          <NavItem collapsed={collapsed} to="/app/timeline" icon={<Timer />} label="Timeline" onClick={onNavItemClick} />
+          <NavItem collapsed={collapsed} to="/app/reports" icon={<FileDown />} label="Reports" onClick={onNavItemClick} />
+        </div>
+      </div>
+
+      <div className="border-t border-white/5 p-3">
+        <NavItem collapsed={collapsed} to="/app/admin/users" icon={<Users />} label="Team Directory" onClick={onNavItemClick} />
+        <NavItem collapsed={collapsed} to="/app/profile" icon={<Settings />} label="Settings" onClick={onNavItemClick} />
+      </div>
+    </>
+  );
+}
+
 function CmdItem({ icon, label, onAction }: { icon: React.ReactNode; label: string; onAction: () => void }) {
   return (
     <button 
@@ -233,11 +285,12 @@ function CmdItem({ icon, label, onAction }: { icon: React.ReactNode; label: stri
   );
 }
 
-function NavItem({ to, icon, label, collapsed }: { to: string; icon: React.ReactNode; label: string; collapsed: boolean }) {
+function NavItem({ to, icon, label, collapsed, onClick }: { to: string; icon: React.ReactNode; label: string; collapsed: boolean; onClick?: () => void }) {
   return (
     <NavLink
       to={to}
       title={collapsed ? label : undefined}
+      onClick={onClick}
       className={({ isActive }) =>
         [
           "group relative flex items-center rounded-xl transition-all duration-200",
