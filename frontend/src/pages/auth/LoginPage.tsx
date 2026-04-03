@@ -46,7 +46,7 @@ export function LoginPage() {
           >
             <div className="space-y-1 text-left">
               <div className="text-xs font-medium text-white/70">Username or Email</div>
-              <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="e.g. krunal or krunal@gmail.com" />
+              <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="e.g. username or user@example.com" />
             </div>
 
             <div className="space-y-1 text-left">

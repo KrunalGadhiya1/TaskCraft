@@ -47,11 +47,11 @@ export function RegisterPage() {
           >
             <div className="space-y-1 text-left">
               <div className="text-xs font-medium text-white/70">Username</div>
-              <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. krunal" />
+              <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. username" />
             </div>
             <div className="space-y-1 text-left">
               <div className="text-xs font-medium text-white/70">Email</div>
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. krunal@gmail.com" />
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. user@example.com" />
             </div>
             <div className="space-y-1 text-left">
               <div className="text-xs font-medium text-white/70">Password</div>
