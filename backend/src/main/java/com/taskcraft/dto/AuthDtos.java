@@ -9,7 +9,7 @@ public class AuthDtos {
     public static class RegisterRequest {
 
         @NotBlank
-        @Size(min = 3, max = 100)
+        @Size(min = 5, max = 100)
         private String username;
 
         @NotBlank
@@ -139,4 +139,3 @@ public class AuthDtos {
         }
     }
 }
-
