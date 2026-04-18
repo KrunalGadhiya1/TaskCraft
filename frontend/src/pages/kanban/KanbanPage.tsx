@@ -235,6 +235,8 @@ function CreateTaskModal({
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("MEDIUM");
   const [type, setType] = useState<TaskType>("TASK");
+  const [storyPoints, setStoryPoints] = useState<number | "">("");
+  const [dueDate, setDueDate] = useState("");
   const [loading, setLoading] = useState(false);
 
   return (
@@ -274,6 +276,29 @@ function CreateTaskModal({
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <div className="text-xs font-medium text-white/70">Story Points</div>
+            <input
+              type="number"
+              min="0"
+              className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+              value={storyPoints}
+              onChange={(e) => setStoryPoints(e.target.value ? Number(e.target.value) : "")}
+              placeholder="e.g. 5"
+            />
+          </div>
+          <div className="space-y-1">
+            <div className="text-xs font-medium text-white/70">Due Date</div>
+            <input
+              type="datetime-local"
+              className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className="flex items-center justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={onClose}>
             Cancel
@@ -289,11 +314,15 @@ function CreateTaskModal({
                   description: "",
                   type,
                   priority,
+                  storyPoints: storyPoints === "" ? undefined : storyPoints,
+                  dueDate: dueDate === "" ? undefined : new Date(dueDate).toISOString(),
                 });
                 toast.success("Task created");
                 setTitle("");
                 setPriority("MEDIUM");
                 setType("TASK");
+                setStoryPoints("");
+                setDueDate("");
                 onClose();
                 onCreated(created);
               } catch (e) {
@@ -326,6 +355,8 @@ function TaskDetailsModal({
   const [description, setDescription] = useState("");
   const [type, setType] = useState<TaskType>("TASK");
   const [priority, setPriority] = useState<TaskPriority>("MEDIUM");
+  const [storyPoints, setStoryPoints] = useState<number | "">("");
+  const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
 
   const [comments, setComments] = useState<CommentResponse[]>([]);
@@ -338,6 +369,15 @@ function TaskDetailsModal({
     setDescription(task.description ?? "");
     setType(task.type);
     setPriority(task.priority);
+    setStoryPoints(task.storyPoints ?? "");
+    // Converts ISO local time properly for datetime-local input
+    if (task.dueDate) {
+      const d = new Date(task.dueDate);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      setDueDate(d.toISOString().slice(0, 16));
+    } else {
+      setDueDate("");
+    }
     setTab("details");
   }, [task]);
 
@@ -418,6 +458,27 @@ function TaskDetailsModal({
                   </select>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-white/50 uppercase tracking-widest">Story Points</div>
+                  <input
+                    type="number"
+                    min="0"
+                    className="h-10 w-full rounded-lg border border-white/5 bg-[#1A1C20] px-3 text-sm text-white outline-none focus:border-indigo-500/50"
+                    value={storyPoints}
+                    onChange={(e) => setStoryPoints(e.target.value ? Number(e.target.value) : "")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-white/50 uppercase tracking-widest">Due Date</div>
+                  <input
+                    type="datetime-local"
+                    className="h-10 w-full rounded-lg border border-white/5 bg-[#1A1C20] px-3 text-sm text-white outline-none focus:border-indigo-500/50"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                  />
+                </div>
+              </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-4">
                 <button
                   className="rounded-lg px-4 py-2 text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white transition-colors"
@@ -437,8 +498,8 @@ function TaskDetailsModal({
                         description,
                         type,
                         priority,
-                        storyPoints: undefined,
-                        dueDate: undefined,
+                        storyPoints: storyPoints === "" ? undefined : storyPoints,
+                        dueDate: dueDate === "" ? undefined : new Date(dueDate).toISOString(),
                       });
                       toast.success("Task saved");
                       onUpdated(updated);
